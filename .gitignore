@@ -1,49 +1,57 @@
-# History files
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# R / RStudio
+.Rproj.user
 .Rhistory
-.Rapp.history
-
-# Session Data files
-.RData
-.RDataTmp
-
-# User-specific files
+.Rdata
 .Ruserdata
-
-# Example code in package build process
-*-Ex.R
-
-# Output files from R CMD build
-/*.tar.gz
-
-# Output files from R CMD check
-/*.Rcheck/
-
-# RStudio files
-.Rproj.user/
-
-# produced vignettes
-vignettes/*.html
-vignettes/*.pdf
-
-# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
-.httr-oauth
-
-# knitr and R markdown default cache directories
-*_cache/
-/cache/
-
-# Temporary files created by R markdown
-*.utf8.md
-*.knit.md
-
-# R Environment Variables
+.RDS
+.Rproj.user.backup
 .Renviron
+.Renviron.local
 
-# pkgdown site
-docs/
+# R 包构建产物
+*.o
+*.so
+*.dll
+*.dylib
+*.exe
+*.out
+*.log
+*.aux
+*.pdf
+*.tar.gz
+*.Rcheck/
+*.RData
+*.Rhistory
+*.Rproj
 
-# translation temp files
-po/*~
+# 编译 / 临时文件
+/inst/doc/
+/doc/
+/README.html
+/vignettes/*.pdf
+/vignettes/*.html
+/Meta/
+/src-i386/
+/src-x64/
 
-# RStudio Connect folder
-rsconnect/
+# 包打包临时文件
+*.Rcheck
+*.tar.gz
+
+# 备份文件
+*~
+*.bak
+*.swp
+*.swo
+
+# 其他常见忽略
+.httr-oauth
+/.quarto
+/.vscode/
+.idea/
