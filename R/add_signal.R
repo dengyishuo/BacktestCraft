@@ -2,7 +2,7 @@
 #'
 #' Generate 0/1 trading signals based on technical indicators or factor values.
 #' Supports threshold judgment, crossover detection, multi-condition logic,
-#' and constant signal assignment.
+#' constant signal assignment, and between-range detection.
 #'
 #' @param df Data frame in long format, must contain 'date' and 'code' columns
 #' @param indicator_cols Character vector of indicator column names used for signal calculation,
@@ -12,11 +12,14 @@
 #'   - "crossover": Crossover detection (golden cross / death cross)
 #'   - "multi_condition": Multi-condition logic (AND/OR)
 #'   - "constant": Constant signal (all 1s, all 0s, or any fixed value)
+#'   - "between": Check if indicator value is within a range [lower, upper] (inclusive)
 #' @param threshold Numeric threshold value(s), only used for "threshold" type
 #' @param compare_op Comparison operator: ">", "<", ">=", "<=", "==", "!="
 #' @param cross_upper Upper band (numeric or column name), only used for "crossover" type
 #' @param cross_lower Lower band (numeric or column name), only used for "crossover" type
 #' @param logic_op Multi-condition logic: "&" for AND, "|" for OR
+#' @param between_lower Numeric lower bound (inclusive), only used for "between" type
+#' @param between_upper Numeric upper bound (inclusive), only used for "between" type
 #' @param signal_name Output signal column name. Auto-generated if NULL
 #' @param constant_value Constant value to assign, only used for "constant" type (e.g., 1 or 0)
 #' @param output_type Output format: "tibble" (default) or "data.frame"
@@ -30,14 +33,22 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Threshold signal returning tibble (default)
+#' # Threshold signal
 #' df_tibble <- add_signal(df,
 #'   indicator_cols = "ram_20",
 #'   signal_type = "threshold",
 #'   threshold = 0, compare_op = ">"
 #' )
 #'
-#' # Threshold signal returning data.frame
+#' # Between-range signal (ram_20 between 0.5 and 2.0)
+#' df_between <- add_signal(df,
+#'   indicator_cols = "ram_20",
+#'   signal_type = "between",
+#'   between_lower = 0.5,
+#'   between_upper = 2.0
+#' )
+#'
+#' # Return as data.frame
 #' df_frame <- add_signal(df,
 #'   indicator_cols = "ram_20",
 #'   signal_type = "threshold",
@@ -48,12 +59,14 @@
 add_signal <- function(
   df,
   indicator_cols = NULL,
-  signal_type = c("threshold", "crossover", "multi_condition", "constant"),
+  signal_type = c("threshold", "crossover", "multi_condition", "constant", "between"),
   threshold = 0,
   compare_op = ">",
   cross_upper = NULL,
   cross_lower = NULL,
   logic_op = "&",
+  between_lower = NULL,
+  between_upper = NULL,
   signal_name = NULL,
   constant_value = 1,
   output_type = c("tibble", "data.frame")
@@ -79,7 +92,23 @@ add_signal <- function(
     }
   }
 
-  # Multi-column parameter validation
+  # Between signal specific validation
+  if (signal_type == "between") {
+    if (length(indicator_cols) != 1) {
+      stop("Between signal type requires exactly one indicator column!")
+    }
+    if (is.null(between_lower) || is.null(between_upper)) {
+      stop("Between signal type requires both between_lower and between_upper parameters!")
+    }
+    if (!is.numeric(between_lower) || !is.numeric(between_upper)) {
+      stop("between_lower and between_upper must be numeric!")
+    }
+    if (between_lower > between_upper) {
+      stop("between_lower must be less than or equal to between_upper!")
+    }
+  }
+
+  # Multi-column parameter validation (for threshold)
   if (signal_type == "threshold" && length(indicator_cols) > 1) {
     if (length(threshold) != 1 && length(threshold) != length(indicator_cols)) {
       stop("For multiple columns, threshold must be length 1 or match number of indicator columns!")
@@ -109,6 +138,8 @@ add_signal <- function(
       signal_name <- paste0("signal_", paste(indicator_cols, collapse = "_"), "_", logic)
     } else if (signal_type == "constant") {
       signal_name <- paste0("signal_constant_", constant_value)
+    } else if (signal_type == "between") {
+      signal_name <- paste0("signal_", indicator_cols[1], "_between_", between_lower, "_", between_upper)
     }
   }
 
@@ -207,6 +238,17 @@ add_signal <- function(
       }
     }
     signal_result <- as.integer(signal_result)
+  }
+
+  # Between-range signal (NEW)
+  else if (signal_type == "between") {
+    col <- indicator_cols[1]
+    v <- result_df[[col]]
+    # Treat NA/Inf as failing the condition
+    v[is.na(v) | is.infinite(v)] <- NA_real_
+    cond <- (v >= between_lower) & (v <= between_upper)
+    cond[is.na(cond)] <- FALSE
+    signal_result <- as.integer(cond)
   }
 
   # --------------------------

@@ -168,7 +168,6 @@
 #'
 #' @export
 run_backtest_final <- function(
-  # Core data parameters
   df,
   weight_col = "weight",
   start_date = NULL,
@@ -181,9 +180,6 @@ run_backtest_final <- function(
   stamp_tax = 0.001,
   slippage_rate = 0.001,
   min_weight = 1e-6,
-  # ======================
-  # Component stop-loss parameters
-  # ======================
   enable_component_stop_loss = FALSE,
   component_stop_loss_type = "fixed",
   fixed_component_sl_ratio = 0.1,
@@ -194,9 +190,6 @@ run_backtest_final <- function(
   vol_sigma_component = 2.0,
   log_vol_n_component = 20,
   log_vol_sigma_component = 2.0,
-  # ======================
-  # Portfolio stop-loss parameters
-  # ======================
   enable_portfolio_stop_loss = FALSE,
   portfolio_stop_loss_type = "fixed",
   fixed_portfolio_sl_ratio = 0.1,
@@ -207,9 +200,6 @@ run_backtest_final <- function(
   vol_sigma_portfolio = 2.0,
   log_vol_n_portfolio = 20,
   log_vol_sigma_portfolio = 2.0,
-  # ======================
-  # Component take-profit parameters
-  # ======================
   enable_component_take_profit = FALSE,
   component_take_profit_type = "fixed",
   fixed_component_tp_ratio = 0.1,
@@ -217,9 +207,6 @@ run_backtest_final <- function(
   atr_k_component_tp = 2.0,
   vol_sigma_component_tp = 2.0,
   log_vol_sigma_component_tp = 2.0,
-  # ======================
-  # Portfolio take-profit parameters
-  # ======================
   enable_portfolio_take_profit = FALSE,
   portfolio_take_profit_type = "fixed",
   fixed_portfolio_tp_ratio = 0.1,
@@ -227,25 +214,16 @@ run_backtest_final <- function(
   atr_k_portfolio_tp = 2.0,
   vol_sigma_portfolio_tp = 2.0,
   log_vol_sigma_portfolio_tp = 2.0,
-  # ======================
-  # Position constraint parameters
-  # ======================
   single_max_weight = 0.95,
   global_max_hold_pct = 1.0,
-  # ======================
-  # Rebalancing parameters
-  # ======================
   rebalance_mode = "calendar",
   rebalance_cycle = "quarterly",
   weight_change_threshold = 0.01,
-  # ======================
-  # Other parameters
-  # ======================
   skip_suspended = TRUE,
   output_type = "tibble"
 ) {
   # ==============================================
-  # 1. Column Name Standardization
+  # 1. Standardize column names
   # ==============================================
   col_map <- list(
     date = c("Date", "date"),
@@ -269,7 +247,7 @@ run_backtest_final <- function(
   }
 
   # ==============================================
-  # 2. Input Validation
+  # 2. Validate required columns
   # ==============================================
   required_cols <- c("date", "code", "open", "close", "adjusted", weight_col, exec_price_col)
   missing_cols <- setdiff(required_cols, colnames(data_raw))
@@ -278,7 +256,7 @@ run_backtest_final <- function(
   }
 
   # ==============================================
-  # 3. Date Parameter Processing
+  # 3. Process date range
   # ==============================================
   data_raw$date <- as.Date(data_raw$date)
   if (!is.null(start_date)) {
@@ -299,18 +277,18 @@ run_backtest_final <- function(
   }
 
   # ==============================================
-  # 4. Parameter Matching and Validation
+  # 4. Validate and match parameters
   # ==============================================
   output_type <- match.arg(output_type)
-  rebalance_mode <- match.arg(rebalance_mode)
-  component_stop_loss_type <- match.arg(component_stop_loss_type)
-  portfolio_stop_loss_type <- match.arg(portfolio_stop_loss_type)
-  component_take_profit_type <- match.arg(component_take_profit_type)
-  portfolio_take_profit_type <- match.arg(portfolio_take_profit_type)
-  rebalance_cycle <- match.arg(rebalance_cycle)
+  rebalance_mode <- match.arg(rebalance_mode, c("calendar", "weight_shift", "hybrid"))
+  component_stop_loss_type <- match.arg(component_stop_loss_type, c("fixed", "trailing_fixed", "trailing_atr", "trailing_vol", "trailing_log"))
+  portfolio_stop_loss_type <- match.arg(portfolio_stop_loss_type, c("fixed", "trailing_fixed", "trailing_atr", "trailing_vol", "trailing_log"))
+  component_take_profit_type <- match.arg(component_take_profit_type, c("fixed", "trailing_fixed", "trailing_atr", "trailing_vol", "trailing_log"))
+  portfolio_take_profit_type <- match.arg(portfolio_take_profit_type, c("fixed", "trailing_fixed", "trailing_atr", "trailing_vol", "trailing_log"))
+  rebalance_cycle <- match.arg(rebalance_cycle, c("daily", "weekly", "monthly", "quarterly", "semiannual", "annual"))
 
   # ==============================================
-  # 5. Helper Functions for Technical Indicators
+  # 5. Technical indicator functions
   # ==============================================
   calc_atr <- function(high, low, close, n) {
     tr <- pmax(high - low, abs(high - dplyr::lag(close)), abs(low - dplyr::lag(close)))
@@ -328,22 +306,22 @@ run_backtest_final <- function(
   }
 
   # ==============================================
-  # 6. Data Preprocessing
+  # 6. Preprocess data and compute indicators
   # ==============================================
   data_processed <- data_raw %>%
-    dplyr::arrange(.data$code, .data$date) %>%
-    dplyr::group_by(.data$code) %>%
+    dplyr::arrange(code, date) %>%
+    dplyr::group_by(code) %>%
     dplyr::mutate(
-      comp_atr    = calc_atr(.data$high, .data$low, .data$close, atr_n_component),
-      comp_vol    = calc_vol(.data$close, vol_n_component),
-      comp_logvol = calc_log_vol(.data$close, log_vol_n_component)
+      comp_atr    = calc_atr(high, low, close, atr_n_component),
+      comp_vol    = calc_vol(close, vol_n_component),
+      comp_logvol = calc_log_vol(close, log_vol_n_component)
     ) %>%
-    dplyr::mutate(dplyr::across(c("comp_atr", "comp_vol", "comp_logvol"), ~ zoo::na.locf(., na.rm = F))) %>%
+    dplyr::mutate(dplyr::across(c("comp_atr", "comp_vol", "comp_logvol"), ~ zoo::na.locf(., na.rm = FALSE))) %>%
     dplyr::ungroup() %>%
-    dplyr::arrange(.data$date, .data$code)
+    dplyr::arrange(date, code)
 
   # ==============================================
-  # 7. Trading Dates and Rebalance Days Initialization
+  # 7. Identify trading dates and rebalance days
   # ==============================================
   trade_dates <- sort(unique(data_processed$date))
   tickers <- unique(data_processed$code)
@@ -354,9 +332,7 @@ run_backtest_final <- function(
   is_weight_shift <- rep(FALSE, nd)
   is_rebalance <- rep(FALSE, nd)
 
-  # --------------------------
-  # Calendar Rebalance Day Calculation
-  # --------------------------
+  # Calendar rebalance days
   if (rebalance_mode %in% c("calendar", "hybrid")) {
     p <- switch(rebalance_cycle,
       daily = "day",
@@ -367,39 +343,35 @@ run_backtest_final <- function(
       annual = "year"
     )
     d <- tibble::tibble(date = trade_dates) %>%
-      dplyr::mutate(g = lubridate::floor_date(.data$date, p)) %>%
-      dplyr::group_by(.data$g) %>%
+      dplyr::mutate(g = lubridate::floor_date(date, p)) %>%
+      dplyr::group_by(g) %>%
       dplyr::slice(1) %>%
-      dplyr::pull("date")
+      dplyr::pull(date)
     is_calendar <- trade_dates %in% d
   }
 
-  # --------------------------
-  # Weight Shift Rebalance Day Calculation
-  # --------------------------
+  # Weight shift rebalance days
   if (rebalance_mode %in% c("weight_shift", "hybrid")) {
     wdf <- data_processed %>%
-      dplyr::select(.data$date, .data$code, w = dplyr::all_of(weight_col)) %>%
-      dplyr::arrange(.data$code, .data$date) %>%
-      dplyr::group_by(.data$code) %>%
+      dplyr::select(date, code, w = dplyr::all_of(weight_col)) %>%
+      dplyr::arrange(code, date) %>%
+      dplyr::group_by(code) %>%
       dplyr::mutate(
-        w_prev = dplyr::lag(.data$w, default = -999),
-        drift = abs(.data$w - .data$w_prev),
-        trigger = .data$drift > weight_change_threshold
+        w_prev = dplyr::lag(w, default = -999),
+        drift = abs(w - w_prev),
+        trigger = drift > weight_change_threshold
       ) %>%
       dplyr::ungroup()
 
     wdays <- wdf %>%
-      dplyr::group_by(.data$date) %>%
-      dplyr::summarise(any_trigger = any(.data$trigger, na.rm = T), .groups = "drop")
+      dplyr::group_by(date) %>%
+      dplyr::summarise(any_trigger = any(trigger, na.rm = TRUE), .groups = "drop")
 
     is_weight_shift <- trade_dates %in% wdays$date[wdays$any_trigger]
     is_weight_shift[1] <- TRUE
   }
 
-  # --------------------------
-  # Final Rebalance Day Determination
-  # --------------------------
+  # Final rebalance flag
   if (rebalance_mode == "calendar") {
     is_rebalance <- is_calendar
   } else if (rebalance_mode == "weight_shift") {
@@ -408,11 +380,10 @@ run_backtest_final <- function(
     is_rebalance <- is_calendar | is_weight_shift
   }
   is_rebalance[1] <- TRUE
-
   total_rebalance_days <- sum(is_rebalance)
 
   # ==============================================
-  # 8. State Variables Initialization
+  # 8. Initialize portfolio state variables
   # ==============================================
   cash <- as.numeric(init_capital)
   positions <- setNames(rep(0, nt), tickers)
@@ -420,6 +391,10 @@ run_backtest_final <- function(
   hold_high_water <- setNames(rep(0, nt), tickers)
   portfolio_high_water <- init_capital
   portfolio_high_water_history <- numeric(nd)
+
+  # Flag for assets stopped in current rebalancing cycle
+  stopped_in_cycle <- logical(nt)
+  names(stopped_in_cycle) <- tickers
 
   equity_series <- numeric(nd)
   equity_series[1] <- init_capital
@@ -430,16 +405,14 @@ run_backtest_final <- function(
   day_data_list <- split(data_processed, data_processed$date)
 
   # ==============================================
-  # 9. Main Backtest Loop
+  # 9. Main backtesting loop
   # ==============================================
   for (i in seq_along(trade_dates)) {
     today <- trade_dates[i]
     day_data <- day_data_list[[as.character(today)]]
     today_is_rebalance <- is_rebalance[i]
 
-    # --------------------------
-    # 9.1 Current Price and Indicator Retrieval
-    # --------------------------
+    # Get current market data
     current_exec_price <- setNames(rep(0, nt), tickers)
     current_eval_price <- setNames(rep(0, nt), tickers)
     current_atr <- setNames(rep(0, nt), tickers)
@@ -454,22 +427,19 @@ run_backtest_final <- function(
       current_vol[idx] <- day_data$comp_vol
       current_logvol[idx] <- day_data$comp_logvol
     }
-
     current_exec_price[is.na(current_exec_price)] <- 0
     current_eval_price[is.na(current_eval_price)] <- 0
 
-    # --------------------------
-    # 9.2 Net Asset Value Calculation
-    # --------------------------
-    hold_mkt_val <- sum(positions * current_eval_price, na.rm = T)
+    # Calculate portfolio value
+    hold_mkt_val <- sum(positions * current_eval_price, na.rm = TRUE)
     total_asset <- cash + hold_mkt_val
     equity_series[i] <- total_asset
     portfolio_high_water <- max(portfolio_high_water, total_asset)
     portfolio_high_water_history[i] <- portfolio_high_water
 
-    # --------------------------
-    # 9.3 Component Stop-Loss Judgment
-    # --------------------------
+    # ==============================================
+    # 9.1 Check component stop-loss
+    # ==============================================
     component_stop_sell <- rep(FALSE, nt)
     pf_sl <- FALSE
 
@@ -480,8 +450,8 @@ run_backtest_final <- function(
         cst <- hold_cost[j]
         ch <- hold_high_water[j]
         hold_high_water[j] <- max(ch, cp)
+        trig <- FALSE
 
-        trig <- F
         if (component_stop_loss_type == "fixed") {
           line <- cst * (1 - fixed_component_sl_ratio)
           trig <- cp <= line
@@ -498,13 +468,13 @@ run_backtest_final <- function(
           line <- ch * exp(-log_vol_sigma_component * current_logvol[j])
           trig <- !is.na(line) && cp <= line
         }
-        if (trig) component_stop_sell[j] <- T
+        if (trig) component_stop_sell[j] <- TRUE
       }
     }
 
-    # --------------------------
-    # 9.4 Portfolio Stop-Loss Judgment
-    # --------------------------
+    # ==============================================
+    # 9.2 Check portfolio stop-loss
+    # ==============================================
     if (enable_portfolio_stop_loss) {
       v <- total_asset
       hw <- portfolio_high_water
@@ -515,37 +485,36 @@ run_backtest_final <- function(
       } else if (portfolio_stop_loss_type == "trailing_atr") {
         wnd <- max(1, i - atr_n_portfolio):i
         eq <- equity_series[wnd]
-        atrw <- mean(pmax(diff(eq), 0), na.rm = T)
+        atrw <- mean(pmax(diff(eq), 0), na.rm = TRUE)
         pf_sl <- !is.na(atrw) && v <= hw - atr_k_portfolio * atrw
       } else if (portfolio_stop_loss_type == "trailing_vol") {
         wnd <- max(1, i - vol_n_portfolio):i
-        s <- sd(equity_series[wnd], na.rm = T)
+        s <- sd(equity_series[wnd], na.rm = TRUE)
         pf_sl <- !is.na(s) && v <= hw - vol_sigma_portfolio * s
       } else if (portfolio_stop_loss_type == "trailing_log") {
         wnd <- max(1, i - log_vol_n_portfolio):i
         r <- diff(log(equity_series[wnd]))
-        lv <- sd(r, na.rm = T)
+        lv <- sd(r, na.rm = TRUE)
         pf_sl <- !is.na(lv) && v <= hw * exp(-log_vol_sigma_portfolio * lv)
       }
     }
-    if (pf_sl) component_stop_sell[] <- T
+    if (pf_sl) component_stop_sell[] <- TRUE
 
-    # --------------------------
-    # 9.5 Component Take-Profit Judgment
-    # --------------------------
-    tp_sell <- rep(F, nt)
-    pf_tp <- F
+    # ==============================================
+    # 9.3 Check component take-profit
+    # ==============================================
+    tp_sell <- rep(FALSE, nt)
+    pf_tp <- FALSE
 
     if (enable_component_take_profit) {
       for (j in 1:nt) {
         if (positions[j] <= 0 || current_eval_price[j] <= 0 || hold_cost[j] <= 0) next
         cp <- current_eval_price[j]
-        cst <- hold_cost[j]
         ch <- hold_high_water[j]
-        trig <- F
+        trig <- FALSE
 
         if (component_take_profit_type == "fixed") {
-          trig <- cp >= cst * (1 + fixed_component_tp_ratio)
+          trig <- cp >= hold_cost[j] * (1 + fixed_component_tp_ratio)
         } else if (component_take_profit_type == "trailing_fixed") {
           trig <- cp <= ch * (1 - trailing_fixed_component_tp_ratio)
         } else if (component_take_profit_type == "trailing_atr") {
@@ -555,13 +524,13 @@ run_backtest_final <- function(
         } else if (component_take_profit_type == "trailing_log") {
           trig <- !is.na(current_logvol[j]) && cp <= ch * exp(-log_vol_sigma_component_tp * current_logvol[j])
         }
-        if (trig) tp_sell[j] <- T
+        if (trig) tp_sell[j] <- TRUE
       }
     }
 
-    # --------------------------
-    # 9.6 Portfolio Take-Profit Judgment
-    # --------------------------
+    # ==============================================
+    # 9.4 Check portfolio take-profit
+    # ==============================================
     if (enable_portfolio_take_profit) {
       v <- total_asset
       hw <- portfolio_high_water
@@ -571,26 +540,28 @@ run_backtest_final <- function(
         pf_tp <- v <= hw * (1 - trailing_fixed_portfolio_tp_ratio)
       } else if (portfolio_take_profit_type == "trailing_atr") {
         wnd <- max(1, i - atr_n_portfolio):i
-        atrw <- mean(pmax(diff(equity_series[wnd]), 0), na.rm = T)
+        eq <- equity_series[wnd]
+        atrw <- mean(pmax(diff(eq), 0), na.rm = TRUE)
         pf_tp <- !is.na(atrw) && v <= hw - atr_k_portfolio_tp * atrw
       } else if (portfolio_take_profit_type == "trailing_vol") {
         wnd <- max(1, i - vol_n_portfolio):i
-        s <- sd(equity_series[wnd], na.rm = T)
+        s <- sd(equity_series[wnd], na.rm = TRUE)
         pf_tp <- !is.na(s) && v <= hw - vol_sigma_portfolio_tp * s
       } else if (portfolio_take_profit_type == "trailing_log") {
         wnd <- max(1, i - log_vol_n_portfolio):i
-        lv <- sd(diff(log(equity_series[wnd])), na.rm = T)
+        r <- diff(log(equity_series[wnd]))
+        lv <- sd(r, na.rm = TRUE)
         pf_tp <- !is.na(lv) && v <= hw * exp(-log_vol_sigma_portfolio_tp * lv)
       }
     }
     if (pf_tp) {
-      component_stop_sell[] <- T
-      tp_sell[] <- T
+      component_stop_sell[] <- TRUE
+      tp_sell[] <- TRUE
     }
 
-    # --------------------------
-    # 9.7 Sell Order Execution (Stop/Take-Profit)
-    # --------------------------
+    # ==============================================
+    # 9.5 Execute stop-loss / take-profit sells
+    # ==============================================
     sell_idx <- which(component_stop_sell | tp_sell)
     for (j in sell_idx) {
       if (positions[j] == 0 || current_exec_price[j] <= 0) next
@@ -621,13 +592,21 @@ run_backtest_final <- function(
       positions[j] <- 0
       hold_cost[j] <- 0
       hold_high_water[j] <- 0
+
+      # Mark as stopped in current cycle
+      if (component_stop_sell[j] || pf_sl) {
+        stopped_in_cycle[j] <- TRUE
+      }
     }
 
-    # --------------------------
-    # 9.8 Rebalance Target Shares Calculation
-    # --------------------------
+    # ==============================================
+    # 9.6 Execute rebalancing
+    # ==============================================
     if (today_is_rebalance && !pf_sl && !pf_tp) {
-      ta <- cash + sum(positions * current_eval_price, na.rm = T)
+      # Reset stop flags for new cycle
+      stopped_in_cycle[] <- FALSE
+
+      ta <- cash + sum(positions * current_eval_price, na.rm = TRUE)
       w <- rep(0, nt)
       if (nrow(day_data) > 0) {
         idx <- match(day_data$code, tickers)
@@ -640,12 +619,13 @@ run_backtest_final <- function(
         w[idx] <- raw
       }
 
+      # Exclude assets stopped in current cycle
+      w[stopped_in_cycle] <- 0
+
       target <- floor(ta * w / current_exec_price / lot_size) * lot_size
       target[is.na(target) | current_exec_price <= 0] <- 0
 
-      # --------------------------
-      # 9.9 Rebalance Trade Execution
-      # --------------------------
+      # Sell excess positions
       for (j in 1:nt) {
         if (positions[j] > target[j]) {
           q <- positions[j] - target[j]
@@ -672,6 +652,7 @@ run_backtest_final <- function(
         }
       }
 
+      # Buy target positions
       for (j in 1:nt) {
         if (positions[j] < target[j]) {
           q <- target[j] - positions[j]
@@ -706,9 +687,9 @@ run_backtest_final <- function(
       }
     }
 
-    # --------------------------
-    # 9.10 Daily Position Record
-    # --------------------------
+    # ==============================================
+    # 9.7 Save daily records
+    # ==============================================
     pos_df <- data.frame(
       date = today,
       code = tickers,
@@ -722,10 +703,7 @@ run_backtest_final <- function(
     pos_df$is_stop_loss_day <- any(component_stop_sell) || pf_sl
     position_daily_list[[i]] <- pos_df
 
-    # --------------------------
-    # 9.11 Daily Account Record
-    # --------------------------
-    mv <- sum(pos_df$market_value, na.rm = T)
+    mv <- sum(pos_df$market_value, na.rm = TRUE)
     account_cash_list[[i]] <- data.frame(
       date = today,
       cash = round(cash, 2),
@@ -737,7 +715,7 @@ run_backtest_final <- function(
   }
 
   # ==============================================
-  # 10. Result Combination and Formatting
+  # 10. Combine results
   # ==============================================
   trades_df <- dplyr::bind_rows(trade_list)
   positions_df <- dplyr::bind_rows(position_daily_list)
@@ -745,8 +723,8 @@ run_backtest_final <- function(
 
   equity_df <- equity_df %>%
     dplyr::mutate(
-      daily_return = round(.data$total_asset / dplyr::lag(.data$total_asset) - 1, 6),
-      daily_return = ifelse(is.na(.data$daily_return), 0, .data$daily_return)
+      daily_return = round(total_asset / dplyr::lag(total_asset) - 1, 6),
+      daily_return = ifelse(is.na(daily_return), 0, daily_return)
     )
   equity_df$daily_return[1] <- 0
   equity_df$portfolio_high_water <- portfolio_high_water_history
@@ -758,7 +736,7 @@ run_backtest_final <- function(
   }
 
   # ==============================================
-  # 11. Output Summary Message
+  # 11. Print summary
   # ==============================================
   final <- tail(equity_df$total_asset, 1)
   ret <- (final / init_capital - 1) * 100
@@ -776,7 +754,7 @@ run_backtest_final <- function(
   message("==============================================")
 
   # ==============================================
-  # 12. Return Final Result
+  # 12. Return results
   # ==============================================
   return(list(
     daily_positions = positions_df,

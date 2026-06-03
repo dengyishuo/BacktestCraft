@@ -10,6 +10,7 @@ add_rank_signal(
   top_n = 2,
   rank_order = "desc",
   tie_method = "min",
+  rank_threshold = NULL,
   signal_name = NULL,
   output_type = c("tibble", "data.frame")
 )
@@ -25,6 +26,9 @@ add_rank_signal(
 
 \item{tie_method}{Method for handling ties: "min", "max", or "average", default "min"}
 
+\item{rank_threshold}{Numeric value; only stocks with rank_col > rank_threshold are considered for ranking.
+If NULL (default), no threshold filtering is applied.}
+
 \item{signal_name}{Character, output signal column name. Auto-generated if NULL}
 
 \item{output_type}{Output format: "tibble" (default) or "data.frame"}
@@ -36,6 +40,7 @@ Data frame with an appended 0/1 signal column (1 = selected, 0 = not selected)
 \description{
 Generate 0/1 signals by ranking specified indicators within each trading day.
 Select TOP N or BOTTOM N stocks based on ranking order.
+Optionally filter stocks by a minimum threshold on the ranking column before ranking.
 Fully compatible with quantitative strategy long-format data structure.
 }
 \examples{
@@ -45,6 +50,9 @@ df <- add_rank_signal(df, rank_col = "mom_20", top_n = 2)
 
 # Select BOTTOM 3 stocks by vol_60 (ascending order)
 df <- add_rank_signal(df, rank_col = "vol_60", top_n = 3, rank_order = "asc")
+
+# Select TOP 5 stocks with mom_20 > 0.5 (filter before ranking)
+df <- add_rank_signal(df, rank_col = "mom_20", top_n = 5, rank_threshold = 0.5)
 
 # Return as base data.frame instead of tibble
 df <- add_rank_signal(df, rank_col = "mom_20", top_n = 5, output_type = "data.frame")

@@ -1,1 +1,2 @@
-backtest_demo	Compare backtest and run_backtest_final on all_weather data
+all_weather_strategy All-weather ETF momentum strategy backtest demo
+style_strategy       Style ETF momentum strategy backtest demo

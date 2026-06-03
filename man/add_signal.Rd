@@ -7,12 +7,14 @@
 add_signal(
   df,
   indicator_cols = NULL,
-  signal_type = c("threshold", "crossover", "multi_condition", "constant"),
+  signal_type = c("threshold", "crossover", "multi_condition", "constant", "between"),
   threshold = 0,
   compare_op = ">",
   cross_upper = NULL,
   cross_lower = NULL,
   logic_op = "&",
+  between_lower = NULL,
+  between_upper = NULL,
   signal_name = NULL,
   constant_value = 1,
   output_type = c("tibble", "data.frame")
@@ -28,7 +30,8 @@ e.g., c("ram_20", "mom_5")}
 - "threshold": Threshold judgment (default)
 - "crossover": Crossover detection (golden cross / death cross)
 - "multi_condition": Multi-condition logic (AND/OR)
-- "constant": Constant signal (all 1s, all 0s, or any fixed value)}
+- "constant": Constant signal (all 1s, all 0s, or any fixed value)
+- "between": Check if indicator value is within a range [lower, upper] (inclusive)}
 
 \item{threshold}{Numeric threshold value(s), only used for "threshold" type}
 
@@ -39,6 +42,10 @@ e.g., c("ram_20", "mom_5")}
 \item{cross_lower}{Lower band (numeric or column name), only used for "crossover" type}
 
 \item{logic_op}{Multi-condition logic: "&" for AND, "|" for OR}
+
+\item{between_lower}{Numeric lower bound (inclusive), only used for "between" type}
+
+\item{between_upper}{Numeric upper bound (inclusive), only used for "between" type}
 
 \item{signal_name}{Output signal column name. Auto-generated if NULL}
 
@@ -52,18 +59,26 @@ Original data frame with an appended signal column in specified format
 \description{
 Generate 0/1 trading signals based on technical indicators or factor values.
 Supports threshold judgment, crossover detection, multi-condition logic,
-and constant signal assignment.
+constant signal assignment, and between-range detection.
 }
 \examples{
 \dontrun{
-# Threshold signal returning tibble (default)
+# Threshold signal
 df_tibble <- add_signal(df,
   indicator_cols = "ram_20",
   signal_type = "threshold",
   threshold = 0, compare_op = ">"
 )
 
-# Threshold signal returning data.frame
+# Between-range signal (ram_20 between 0.5 and 2.0)
+df_between <- add_signal(df,
+  indicator_cols = "ram_20",
+  signal_type = "between",
+  between_lower = 0.5,
+  between_upper = 2.0
+)
+
+# Return as data.frame
 df_frame <- add_signal(df,
   indicator_cols = "ram_20",
   signal_type = "threshold",

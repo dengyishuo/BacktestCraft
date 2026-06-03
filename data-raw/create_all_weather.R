@@ -1,12 +1,11 @@
-# 文件：data-raw/create_all_weather.R
-# 目的：从 FactorCraft 获取原始 OHLC 数据，保存为包内置数据集 all_weather
-# 运行方式：在包根目录下执行 Rscript data-raw/create_all_weather.R
-# 或 source("data-raw/create_all_weather.R")
+# File: data-raw/create_all_weather.R
+# Purpose: Fetch raw OHLC data from FactorCraft and save as built-in dataset 'all_weather'
+# Execution: Run Rscript data-raw/create_all_weather.R in package root, or source("data-raw/create_all_weather.R")
 
 library(FactorCraft)
 
 # ==============================================
-# 1. 定义要获取的资产代码（8只ETF）及名称
+# 1. Define asset codes and names (8 ETFs)
 # ==============================================
 etf_data <- data.frame(
   code = c(
@@ -23,19 +22,19 @@ etf_data <- data.frame(
 )
 
 # ==============================================
-# 2. 获取原始 OHLC 数据（不添加任何信号和权重）
+# 2. Fetch raw OHLC data (no signals or weights added)
 # ==============================================
-cat("正在从 FactorCraft 获取原始 OHLC 数据...\n")
+cat("Fetching raw OHLC data from FactorCraft...\n")
 all_weather <- get_data(etf_data, start_date = "2020-01-01", end_date = "2026-05-01")
-cat("数据获取完成，共", nrow(all_weather), "行。\n")
+cat("Data fetched successfully. Total rows:", nrow(all_weather), "\n")
 
 # ==============================================
-# 3. 保存为内置数据
+# 3. Save as built-in dataset
 # ==============================================
-# 确保 data/ 目录存在
+# Ensure data/ directory exists
 if (!dir.exists("data")) dir.create("data")
 
-# 保存数据（使用 xz 压缩以减小体积）
+# Save data (using xz compression to reduce size)
 usethis::use_data(all_weather, overwrite = TRUE, compress = "xz")
 
-cat("内置数据已保存至 data/all_weather.rda\n")
+cat("Built-in dataset saved to data/all_weather.rda\n")
