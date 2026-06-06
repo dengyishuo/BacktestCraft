@@ -1,13 +1,7 @@
 Package: eBacktestCraft
 Title: Professional Backtesting Framework for Quantitative Strategies
 Version: 0.1.0
-Authors@R: person(
-  given = "Yishuo",
-  family = "Deng",
-  role = c("aut", "cre", "cph"),
-  email = "dengyishuo@163.com",
-  comment = "Author of eFactorCraft"
-)
+Authors@R: person(given = "Yishuo", family = "Deng", role = c("aut", "cre", "cph"), email = "dengyishuo@163.com", comment = "Author of eFactorCraft")
 Description: A comprehensive backtesting framework designed to work seamlessly
     with eFactorCraft. Supports multiple rebalance modes (calendar/threshold),
     advanced stop-loss mechanisms (fixed/trailing/hybrid), portfolio constraints,

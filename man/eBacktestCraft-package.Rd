@@ -6,7 +6,7 @@
 \alias{eBacktestCraft-package}
 \title{eBacktestCraft: Professional Backtesting Framework for Quantitative Strategies}
 \description{
-A comprehensive backtesting framework designed to work seamlessly with eFactorCraft. Supports multiple rebalance modes (calendar/threshold), advanced stop-loss mechanisms (fixed/trailing/hybird), portfolio constraints, transaction costs, and comprehensive performance analytics. Includes professional visualization tools for equity curves, drawdowns, and return distributions. Perfect for quantitative strategy research and factor-based investing.
+A comprehensive backtesting framework designed to work seamlessly with eFactorCraft. Supports multiple rebalance modes (calendar/threshold), advanced stop-loss mechanisms (fixed/trailing/hybrid), portfolio constraints, transaction costs, and comprehensive performance analytics. Includes professional visualization tools for equity curves, drawdowns, and return distributions. Ideal for quantitative strategy research and factor-based investing.
 }
 \seealso{
 Useful links:
@@ -17,16 +17,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Yishuo Deng \email{dengyishuo@163.com}
+\strong{Maintainer}: Yishuo Deng \email{dengyishuo@163.com} (Author of eFactorCraft) [copyright holder]
 
 Authors:
 \itemize{
-  \item Yishuo Deng \email{dengyishuo@163.com}
-}
-
-Other contributors:
-\itemize{
-  \item Yishuo Deng (eFactorCraft author) [contributor]
+  \item Yishuo Deng \email{dengyishuo@163.com} (Author of eFactorCraft) [copyright holder]
 }
 
 }
