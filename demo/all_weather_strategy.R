@@ -3,7 +3,7 @@
 #          comparing backtest and run_backtest_final
 
 # Load package
-library(FactorCraft)
+library(eBacktestCraft)
 
 # Load built-in raw data
 data("all_weather")
@@ -48,8 +48,8 @@ bt_result <- backtest(
 # ==============================================
 # 3. Run enhanced run_backtest_final
 # ==============================================
-cat("\n=== Running run_backtest_final (enhanced version) ===\n")
-res <- run_backtest_final(
+cat("\n=== Running run_backtest (enhanced version) ===\n")
+res <- run_backtest(
   df = dat_with_weight,
   weight_col = "weight_fixed_signal_constant_1",
   init_capital = 100000,

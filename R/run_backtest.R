@@ -149,7 +149,7 @@
 #' )
 #'
 #' # Run basic calendar rebalancing backtest
-#' bt_result <- run_backtest_final(
+#' bt_result <- run_backtest(
 #'   df = df,
 #'   weight_col = "weight",
 #'   rebalance_mode = "calendar",
@@ -167,7 +167,7 @@
 #' }
 #'
 #' @export
-run_backtest_final <- function(
+run_backtest <- function(
   df,
   weight_col = "weight",
   start_date = NULL,

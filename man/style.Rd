@@ -18,7 +18,7 @@ A tibble (or data.frame) with the following columns:
 }
 }
 \source{
-Data downloaded from FactorCraft package via `get_data()`.
+Data downloaded from eFactorCraft package via `get_data()`.
 }
 \usage{
 data("style")

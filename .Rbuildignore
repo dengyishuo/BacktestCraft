@@ -10,6 +10,6 @@
 ^\.lintr$
 ^\..*
 ^\.DS_Store$
-^BacktestCraft\.Rproj$
+^eBacktestCraft\.Rproj$
 ^dev$
 ^data-raw$

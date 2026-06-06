@@ -1,13 +1,13 @@
-Package: BacktestCraft
+Package: eBacktestCraft
 Title: Professional Backtesting Framework for Quantitative Strategies
 Version: 0.1.0
 Authors@R: c(
     person(given = "Yishuo", family = "Deng", email = "dengyishuo@163.com", role = c("aut", "cre")),
-    person(given = "Yishuo", family = "Deng", role = "ctb", comment = "FactorCraft author")
+    person(given = "Yishuo", family = "Deng", role = "ctb", comment = "eFactorCraft author")
   )
 Description: A comprehensive backtesting framework designed to work seamlessly 
-    with FactorCraft. Supports multiple rebalance modes (daily/calendar/signal),
-    advanced stop-loss mechanisms (fixed/trailing/dynamic), portfolio constraints,
+    with eFactorCraft. Supports multiple rebalance modes (calendar/threshold),
+    advanced stop-loss mechanisms (fixed/trailing/hybird), portfolio constraints,
     transaction costs, and comprehensive performance analytics. Includes professional
     visualization tools for equity curves, drawdowns, and return distributions.
     Perfect for quantitative strategy research and factor-based investing.
@@ -26,12 +26,12 @@ Imports:
     stats,
     utils
 Suggests:
-    FactorCraft,
+    eFactorCraft,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
-URL: https://github.com/dengyishuo/BacktestCraft
-BugReports: https://github.com/dengyishuo/BacktestCraft/issues
+URL: https://github.com/dengyishuo/eBacktestCraft
+BugReports: https://github.com/dengyishuo/eBacktestCraft/issues
 Config/roxygen2/version: 8.0.0
 Encoding: UTF-8

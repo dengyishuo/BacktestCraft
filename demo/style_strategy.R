@@ -4,12 +4,12 @@
 # ==============================================
 
 # Load required packages
-library(FactorCraft)
+library(eBacktestCraft)
 
 # ==============================================
 # 1. Load built-in style dataset and rename to dat_style
 # ==============================================
-data("style", package = "BacktestCraft")
+data("style", package = "eBacktestCraft")
 dat_style <- style
 
 # ==============================================
@@ -35,7 +35,7 @@ dat_style_with_weight <- add_norm_weight(
 # ==============================================
 # 5. Run backtest with hybrid rebalancing (monthly + 5% drift)
 # ==============================================
-res_style <- run_backtest_final(
+res_style <- run_backtest(
   df = dat_style_with_weight,
   weight_col = "weight_ram_20_signal_ram_20_top3",
   init_capital = 100000,

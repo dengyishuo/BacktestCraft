@@ -23,7 +23,7 @@ stock_df <- data.frame(
   stringsAsFactors = FALSE
 )
 
-library(FactorCraft)
+library(eFactorCraft)
 dat <- get_data(stock_df, start_date = "2020-01-01", end_date = "2026-05-01")
 
 dat_with_signal <- add_signal(dat, signal_type = "constant")
@@ -144,7 +144,7 @@ stock_df <- data.frame(
   stringsAsFactors = FALSE
 )
 
-library(FactorCraft)
+library(eFactorCraft)
 dat_style <- get_data(stock_df, start_date = "2020-01-01", end_date = "2026-05-31")
 
 dat_style_with_indicator <- add_risk_adj_mom(dat_style, close_col = "adjusted")

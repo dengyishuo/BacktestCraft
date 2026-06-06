@@ -1,8 +1,8 @@
 # File: data-raw/create_all_weather.R
-# Purpose: Fetch raw OHLC data from FactorCraft and save as built-in dataset 'all_weather'
+# Purpose: Fetch raw OHLC data from eFactorCraft and save as built-in dataset 'all_weather'
 # Execution: Run Rscript data-raw/create_all_weather.R in package root, or source("data-raw/create_all_weather.R")
 
-library(FactorCraft)
+library(eFactorCraft)
 
 # ==============================================
 # 1. Define asset codes and names (8 ETFs)
@@ -24,7 +24,7 @@ etf_data <- data.frame(
 # ==============================================
 # 2. Fetch raw OHLC data (no signals or weights added)
 # ==============================================
-cat("Fetching raw OHLC data from FactorCraft...\n")
+cat("Fetching raw OHLC data from eFactorCraft...\n")
 all_weather <- get_data(etf_data, start_date = "2020-01-01", end_date = "2026-05-01")
 cat("Data fetched successfully. Total rows:", nrow(all_weather), "\n")
 

@@ -1,8 +1,8 @@
 # File: data-raw/create_style.R
-# Purpose: Fetch raw OHLC data for style ETFs from FactorCraft and save as built-in dataset 'style'
+# Purpose: Fetch raw OHLC data for style ETFs from eFactorCraft and save as built-in dataset 'style'
 # Execution: Run Rscript data-raw/create_style.R in package root, or source("data-raw/create_style.R")
 
-library(FactorCraft)
+library(eFactorCraft)
 
 # ==============================================
 # 1. Define asset codes and names (13 style ETFs)
@@ -44,7 +44,7 @@ style_df <- data.frame(
 # ==============================================
 # 2. Fetch raw OHLC data (no signals or weights added)
 # ==============================================
-cat("Fetching raw OHLC data for style ETFs from FactorCraft...\n")
+cat("Fetching raw OHLC data for style ETFs from eFactorCraft...\n")
 style <- get_data(style_df, start_date = "2020-01-01", end_date = "2026-05-31")
 cat("Data fetched successfully. Total rows:", nrow(style), "\n")
 

@@ -15,7 +15,7 @@
 #'   \item{volume}{Numeric, trading volume}
 #' }
 #'
-#' @source Data downloaded from FactorCraft package via `get_data()`.
+#' @source Data downloaded from eFactorCraft package via `get_data()`.
 #' @usage data("all_weather")
 #' @docType data
 #' @keywords datasets
@@ -45,7 +45,7 @@ NULL
 #'   \item{volume}{Numeric, trading volume}
 #' }
 #'
-#' @source Data downloaded from FactorCraft package via `get_data()`.
+#' @source Data downloaded from eFactorCraft package via `get_data()`.
 #' @usage data("style")
 #' @docType data
 #' @keywords datasets
